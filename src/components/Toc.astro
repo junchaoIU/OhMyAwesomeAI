@@ -1,0 +1,85 @@
+---
+/**
+ * 页内目录（TOC）。
+ * variant="rail"   宽屏右侧吸附栏（页面需将其作为 grid 子元素放置）
+ * variant="inline" 窄屏折叠块（放在正文之前）
+ * headings 数量不足 3 时不渲染；滚动高亮逻辑见文件底部脚本。
+ */
+interface TocHeading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: TocHeading[];
+  color?: string;
+  variant: 'rail' | 'inline';
+}
+
+const { headings, color = '#818cf8', variant } = Astro.props;
+const items = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
+---
+
+{
+  items.length >= 3 && (
+    <>
+      {variant === 'rail' ? (
+        <aside class="top-20 hidden h-fit max-h-[calc(100vh-6rem)] overflow-y-auto pb-4 xl:sticky xl:block">
+          <p class="mb-2 px-3 text-xs font-semibold tracking-[0.2em] text-star-500">本页目录</p>
+          <ul>
+            {items.map((h) => (
+              <li>
+                <a href={`#${h.slug}`} class:list={['toc-link', h.depth === 3 && 'depth-3']} data-target={h.slug} style={`--c:${color}`}>
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      ) : (
+        <details class="panel mb-8 p-4 xl:hidden">
+          <summary class="cursor-pointer select-none text-xs font-semibold tracking-[0.2em] text-star-500">本页目录</summary>
+          <ul class="mt-2">
+            {items.map((h) => (
+              <li>
+                <a href={`#${h.slug}`} class:list={['toc-link', h.depth === 3 && 'depth-3']} data-target={h.slug} style={`--c:${color}`}>
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </>
+  )
+}
+
+<script>
+  // 滚动高亮：小节进入视口上部区域时点亮目录项（rail 与 inline 同时生效）
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
+  if (links.length > 0) {
+    const groups = new Map<string, HTMLAnchorElement[]>();
+    links.forEach((l) => {
+      const id = l.dataset.target;
+      if (!id) return;
+      groups.set(id, [...(groups.get(id) ?? []), l]);
+    });
+    const setActive = (id: string) => {
+      links.forEach((l) => l.classList.remove('active'));
+      (groups.get(id) ?? []).forEach((l) => l.classList.add('active'));
+    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        }
+      },
+      { rootMargin: '-15% 0px -75% 0px' },
+    );
+    groups.forEach((_ls, id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+  }
+</script>

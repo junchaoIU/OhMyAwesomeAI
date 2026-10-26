@@ -1,0 +1,39 @@
+---
+import { u } from '../lib/utils';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-white/10 bg-void-950/70">
+  <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-3">
+    <div>
+      <p class="font-serif text-lg font-bold text-white">Oh My Awesome AI</p>
+      <p class="mt-2 max-w-sm text-sm leading-relaxed text-star-400">
+        一张持续演进的 AI 研究世界地图。以领域为经、时间为纬，梳理领域进展、重要论文与开放问题。
+      </p>
+    </div>
+    <div>
+      <p class="text-sm font-semibold text-star-200">探索</p>
+      <ul class="mt-3 space-y-2 text-sm text-star-400">
+        <li><a class="transition hover:text-white" href={u('/map')}>世界地图</a></li>
+        <li><a class="transition hover:text-white" href={u('/timeline')}>演进时间线</a></li>
+        <li><a class="transition hover:text-white" href={u('/papers')}>论文精读</a></li>
+        <li><a class="transition hover:text-white" href={u('/questions')}>研究问题</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="text-sm font-semibold text-star-200">内容即代码</p>
+      <ul class="mt-3 space-y-2 text-sm text-star-400">
+        <li><a class="transition hover:text-white" href={u('/blog')}>综述长文</a></li>
+        <li><a class="transition hover:text-white" href={u('/notes')}>日志速记</a></li>
+        <li><a class="transition hover:text-white" href={u('/about')}>关于本站与写作规范</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/5">
+    <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-star-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <p>© {year} Oh My Awesome AI · 用 Astro 构建 · 内容以 Markdown 管理</p>
+      <p>个人研究笔记，不代表任何机构观点</p>
+    </div>
+  </div>
+</footer>

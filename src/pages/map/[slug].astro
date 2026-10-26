@@ -1,0 +1,266 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../components/BaseLayout.astro';
+import DomainTree from '../../components/DomainTree.astro';
+import PaperCard from '../../components/PaperCard.astro';
+import QuestionCard from '../../components/QuestionCard.astro';
+import Toc from '../../components/Toc.astro';
+import {
+  ROOT_COLORS,
+  buildDomainTree,
+  makeParentMap,
+  rootOf,
+  subtreeOf,
+} from '../../lib/domains';
+import { DOMAIN_STATUS_META, IMPORTANCE_META, formatDate, tocItems, u } from '../../lib/utils';
+
+export async function getStaticPaths() {
+  const domains = await getCollection('domains');
+  return domains.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+
+const domains = await getCollection('domains');
+const papers = await getCollection('papers');
+const questions = await getCollection('questions');
+const timeline = await getCollection('timeline');
+
+const parentMap = makeParentMap(domains);
+const tree = buildDomainTree(domains);
+const colorOf = (slug: string) => ROOT_COLORS[rootOf(slug, parentMap)] ?? '#94a3b8';
+const nameOf = (slug: string) => domains.find((d) => d.id === slug)?.data.name ?? slug;
+
+const color = colorOf(entry.id);
+const parentEntry = entry.data.parent
+  ? domains.find((d) => d.id === entry.data.parent)
+  : undefined;
+const rootSlug = rootOf(entry.id, parentMap);
+const statusMeta = DOMAIN_STATUS_META[entry.data.status];
+const subtree = subtreeOf(entry.id, domains);
+
+const children = domains
+  .filter((d) => d.data.parent === entry.id)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const domainPapers = papers
+  .filter((p) => subtree.has(p.data.domain))
+  .sort((a, b) => b.data.year - a.data.year);
+
+const domainTimeline = timeline
+  .filter((t) => subtree.has(t.data.domain))
+  .sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+
+const domainQuestions = questions.filter((q) => subtree.has(q.data.domain));
+
+const title = entry.data.name;
+const toc = tocItems(headings);
+const showToc = toc.length >= 3;
+---
+
+<BaseLayout title={`${title} · 领域地图`} description={entry.data.summary}>
+  <div
+    class:list={[
+      'grid gap-8',
+      showToc
+        ? 'lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_190px]'
+        : 'lg:grid-cols-[280px_1fr]',
+    ]}
+  >
+    <!-- 左侧领域树 -->
+    <aside class="panel top-20 h-fit p-4 lg:sticky">
+      <p class="mb-3 px-2 text-xs font-semibold tracking-[0.2em] text-star-500">领域树</p>
+      <DomainTree roots={tree} activeSlug={entry.id} />
+    </aside>
+
+    <div class="min-w-0">
+      <!-- 面包屑 -->
+      <nav class="mb-4 flex flex-wrap items-center gap-1.5 text-xs text-star-500">
+        <a href={u('map')} class="transition hover:text-star-200">世界地图</a>
+        {
+          parentEntry ? (
+            <>
+              <span>/</span>
+              <a href={u(`map/${parentEntry.id}`)} class="transition hover:text-star-200">
+                {parentEntry.data.name}
+              </a>
+            </>
+          ) : null
+        }
+        <span>/</span>
+        <span class="text-star-300">{entry.data.name}</span>
+      </nav>
+
+      <!-- 领域头部 -->
+      <header class="domain-card rounded-2xl p-6 sm:p-8" style={`--c:${color}`}>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="domain-dot" />
+          <h1 class="domain-glow-text font-serif text-3xl font-bold tracking-tight sm:text-4xl">
+            {entry.data.name}
+          </h1>
+          {
+            entry.data.en && (
+              <span class="text-xs uppercase tracking-[0.15em] text-star-500">{entry.data.en}</span>
+            )
+          }
+          <span class:list={['chip', statusMeta.cls]}>{statusMeta.label}</span>
+        </div>
+        <p class="mt-4 max-w-3xl text-sm leading-relaxed text-star-300 sm:text-base">
+          {entry.data.summary}
+        </p>
+        {
+          entry.data.keyLabs.length > 0 && (
+            <div class="mt-4 flex flex-wrap items-center gap-1.5">
+              <span class="text-xs text-star-500">代表机构：</span>
+              {entry.data.keyLabs.map((lab) => (
+                <span class="chip bg-white/5 text-star-300 ring-white/10">{lab}</span>
+              ))}
+            </div>
+          )
+        }
+      </header>
+
+      <!-- 子领域 -->
+      {
+        children.length > 0 && (
+          <section class="mt-10">
+            <h2 class="mb-4 font-serif text-xl font-bold text-white">子领域</h2>
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {children.map((child) => {
+                const childMeta = DOMAIN_STATUS_META[child.data.status];
+                return (
+                  <a
+                    href={u(`map/${child.id}`)}
+                    class="panel group block p-4 transition hover:border-white/25 hover:bg-void-800/70"
+                    style={`--c:${colorOf(child.id)}`}
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="flex items-center gap-2 text-sm font-semibold text-star-100 transition group-hover:text-white">
+                        <span class="domain-dot" style="width:0.45rem;height:0.45rem" />
+                        {child.data.name}
+                      </span>
+                      <span class:list={['chip shrink-0', childMeta.cls]}>{childMeta.label}</span>
+                    </div>
+                    <p class="mt-2 line-clamp-2 text-xs leading-relaxed text-star-400">{child.data.summary}</p>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        )
+      }
+
+      <!-- 概述正文 -->
+      {showToc && <Toc variant="inline" headings={toc} color={color} />}
+      <section class="mt-10">
+        <h2 class="mb-4 font-serif text-xl font-bold text-white">概述</h2>
+        <div class="prose prose-invert max-w-none">
+          <Content />
+        </div>
+      </section>
+
+      <!-- 经典工作（frontmatter 声明） -->
+      {
+        entry.data.keyPapers.length > 0 && (
+          <section class="mt-10">
+            <h2 class="mb-4 font-serif text-xl font-bold text-white">经典工作</h2>
+            <ul class="panel divide-y divide-white/5">
+              {entry.data.keyPapers.map((p) => (
+                <li class="flex items-start gap-3 px-5 py-3 text-sm text-star-300">
+                  <span class="domain-dot mt-1.5" style="width:0.35rem;height:0.35rem" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <!-- 论文精读 -->
+      {
+        domainPapers.length > 0 && (
+          <section class="mt-10">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="font-serif text-xl font-bold text-white">论文精读</h2>
+              <a href={u('papers')} class="text-sm text-star-300 transition hover:text-white">全部论文 →</a>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              {domainPapers.map((p) => (
+                <PaperCard
+                  entry={p}
+                  domainName={nameOf(p.data.domain)}
+                  color={colorOf(p.data.domain)}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      <!-- 时间线切片 -->
+      {
+        domainTimeline.length > 0 && (
+          <section class="mt-10">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="font-serif text-xl font-bold text-white">演进脉络</h2>
+              <a href={u('timeline')} class="text-sm text-star-300 transition hover:text-white">完整时间线 →</a>
+            </div>
+            <ol class="panel space-y-0 divide-y divide-white/5">
+              {domainTimeline.map((t) => {
+                const imp = IMPORTANCE_META[t.data.importance];
+                return (
+                  <li class="flex items-start gap-4 px-5 py-3.5">
+                    <span
+                      class:list={['domain-dot mt-1.5 rounded-full', imp.dotCls]}
+                      style={`--c:${colorOf(t.data.domain)}`}
+                    />
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-star-100">
+                        {t.data.title}
+                        <span class="ml-2 font-normal text-xs text-star-500">{formatDate(t.data.date)}</span>
+                      </p>
+                      <p class="mt-1 text-xs leading-relaxed text-star-400">{t.data.summary}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        )
+      }
+
+      <!-- 关联研究问题 -->
+      {
+        domainQuestions.length > 0 && (
+          <section class="mt-10">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="font-serif text-xl font-bold text-white">关联研究问题</h2>
+              <a href={u('questions')} class="text-sm text-star-300 transition hover:text-white">全部问题 →</a>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              {domainQuestions.map((q) => (
+                <QuestionCard
+                  entry={q}
+                  domainName={nameOf(q.data.domain)}
+                  color={colorOf(q.data.domain)}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      <!-- 返回 -->
+      <div class="mt-12">
+        <a
+          href={parentEntry ? u(`map/${parentEntry.id}`) : u('map')}
+          class="text-sm text-star-400 transition hover:text-white"
+        >
+          ← 返回{parentEntry ? parentEntry.data.name : '世界地图'}
+        </a>
+      </div>
+    </div>
+    {showToc && <Toc variant="rail" headings={toc} color={color} />}
+  </div>
+</BaseLayout>

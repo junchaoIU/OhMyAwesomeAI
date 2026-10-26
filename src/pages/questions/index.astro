@@ -1,0 +1,46 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../components/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import QuestionCard from '../../components/QuestionCard.astro';
+import { ROOT_COLORS, makeParentMap, rootOf } from '../../lib/domains';
+import { QUESTION_STATUS_META } from '../../lib/utils';
+
+const questions = await getCollection('questions');
+const domains = await getCollection('domains');
+const parentMap = makeParentMap(domains);
+
+const colorOf = (slug: string) => ROOT_COLORS[rootOf(slug, parentMap)] ?? '#94a3b8';
+const nameOf = (slug: string) => domains.find((d) => d.id === slug)?.data.name ?? slug;
+
+const sorted = [...questions].sort((a, b) => a.id.localeCompare(b.id));
+---
+
+<BaseLayout
+  title="研究问题"
+  description="驱动当前 AI 研究议程的开放问题：争议、进展与为什么重要。"
+>
+  <PageHeader
+    eyebrow="OPEN QUESTIONS"
+    title="重要研究问题"
+    description="好的综述不止记录「已知」，更要标注「未知」。这里追踪驱动当前研究议程的核心争论与悬而未决的问题。"
+    accent="#fbbf24"
+  />
+
+  <div class="mb-8 flex flex-wrap items-center gap-2 text-xs text-star-400">
+    <span class="mr-1 text-star-500">问题状态：</span>
+    {
+      Object.entries(QUESTION_STATUS_META).map(([key, meta]) => (
+        <span class:list={['chip', meta.cls]}>{meta.label}</span>
+      ))
+    }
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    {
+      sorted.map((q) => (
+        <QuestionCard entry={q} domainName={nameOf(q.data.domain)} color={colorOf(q.data.domain)} />
+      ))
+    }
+  </div>
+</BaseLayout>

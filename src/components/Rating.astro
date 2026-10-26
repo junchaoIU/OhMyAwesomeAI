@@ -1,0 +1,15 @@
+---
+interface Props {
+  value: number;
+}
+
+const { value } = Astro.props;
+---
+
+<span class="inline-flex items-center gap-0.5" title={`推荐度 ${value}/5`} aria-label={`推荐度 ${value}/5`}>
+  {
+    Array.from({ length: 5 }, (_, i) => (
+      <span class:list={['text-sm leading-none', i < value ? 'text-amber-300' : 'text-white/15']}>★</span>
+    ))
+  }
+</span>

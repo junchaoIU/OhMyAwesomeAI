@@ -1,0 +1,19 @@
+{
+  "name": "oh-my-awesome-ai",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "个人 AI 研究综述博客：一张持续演进的 AI 世界地图",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.1.4",
+    "astro": "^5.7.0",
+    "tailwindcss": "^4.1.4"
+  }
+}

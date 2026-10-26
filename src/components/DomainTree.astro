@@ -1,0 +1,53 @@
+---
+import type { DomainNode } from '../lib/domains';
+import { ROOT_COLORS } from '../lib/domains';
+import { u } from '../lib/utils';
+
+interface Props {
+  roots: DomainNode[];
+  activeSlug?: string;
+}
+
+const { roots, activeSlug } = Astro.props;
+const rootColor = (slug: string) => ROOT_COLORS[slug] ?? '#94a3b8';
+---
+
+<nav class="space-y-1 text-sm" aria-label="领域树">
+  {
+    roots.map((root) => (
+      <details open class="group">
+        <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 text-star-200 transition hover:bg-white/5 [&::-webkit-details-marker]:hidden">
+          <svg class="h-3 w-3 shrink-0 text-star-500 transition group-open:rotate-90" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
+            <path d="M4 2l5 4-5 4z" />
+          </svg>
+          <span class="domain-dot" style={`--c:${rootColor(root.slug)}`} />
+          <a
+            href={u(`map/${root.slug}`)}
+            class:list={[
+              'font-medium transition hover:text-white',
+              activeSlug === root.slug ? 'text-white' : 'text-star-200',
+            ]}
+          >
+            {root.entry.data.name}
+          </a>
+          <span class="ml-auto text-xs text-star-600">{root.children.length}</span>
+        </summary>
+        <div class="ml-[13px] mt-1 space-y-0.5 border-l border-white/10 pl-3">
+          {root.children.map((child) => (
+            <a
+              href={u(`map/${child.slug}`)}
+              class:list={[
+                'block rounded-md px-2 py-1 text-[13px] transition',
+                activeSlug === child.slug
+                  ? 'bg-white/10 text-white'
+                  : 'text-star-400 hover:bg-white/5 hover:text-star-100',
+              ]}
+            >
+              {child.entry.data.name}
+            </a>
+          ))}
+        </div>
+      </details>
+    ))
+  }
+</nav>

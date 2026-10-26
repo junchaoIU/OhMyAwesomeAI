@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei",
+    "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun",
+    Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas,
+    monospace;
+
+  /* 深空底色 */
+  --color-void-950: #05070d;
+  --color-void-900: #0a0f1c;
+  --color-void-800: #111a2e;
+  --color-void-700: #1b2740;
+
+  /* 星光文字色 */
+  --color-star-100: #e8ecf8;
+  --color-star-200: #d3dcf0;
+  --color-star-300: #b6c2e2;
+  --color-star-400: #93a3c9;
+  --color-star-500: #8b9cc4;
+  --color-star-600: #64748b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply font-sans text-star-100 antialiased;
+}
+
+/* 深空星野背景：星云光晕 + 平铺星点 */
+.starfield {
+  background-color: var(--color-void-950);
+  background-image:
+    radial-gradient(ellipse 90rem 45rem at 80% -12%, rgba(99, 102, 241, 0.16), transparent 60%),
+    radial-gradient(ellipse 70rem 40rem at 5% 112%, rgba(217, 70, 239, 0.09), transparent 60%),
+    radial-gradient(1.6px 1.6px at 25px 35px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 120px 180px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1.3px 1.3px at 300px 90px, rgba(255, 255, 255, 0.36), transparent),
+    radial-gradient(1px 1px at 200px 300px, rgba(255, 255, 255, 0.24), transparent);
+  background-size: 100% 100%, 100% 100%, 260px 260px, 340px 340px, 520px 520px,
+    460px 460px;
+  background-attachment: fixed;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-white/10 bg-void-900/70;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+
+  /* 领域色系统：组件上设置 --c（领域色）后生效 */
+  .domain-card {
+    border: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+    background:
+      linear-gradient(165deg, color-mix(in srgb, var(--c) 12%, transparent), transparent 58%),
+      var(--color-void-900);
+  }
+  .domain-card:hover {
+    border-color: color-mix(in srgb, var(--c) 55%, transparent);
+    box-shadow: 0 0 44px -14px color-mix(in srgb, var(--c) 50%, transparent);
+  }
+  .domain-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    flex: none;
+    border-radius: 9999px;
+    background: var(--c);
+    box-shadow: 0 0 10px 1px color-mix(in srgb, var(--c) 60%, transparent);
+  }
+  .domain-glow-text {
+    color: color-mix(in srgb, var(--c) 78%, white);
+  }
+  .domain-line {
+    background: linear-gradient(to right, color-mix(in srgb, var(--c) 60%, transparent), transparent);
+  }
+
+  .filter-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset cursor-pointer select-none border-0 bg-white/5 text-star-300 ring-white/10 transition hover:bg-white/10 hover:text-star-100;
+  }
+  .filter-chip[aria-pressed="true"] {
+    @apply bg-white/15 text-white ring-white/25;
+  }
+}
+
+/* 文章排版（typography 插件暗色定制） */
+.prose {
+  --tw-prose-body: #c7d0e4;
+  --tw-prose-headings: #eef2ff;
+  --tw-prose-lead: #b6c2e2;
+  --tw-prose-links: #a5b4fc;
+  --tw-prose-bold: #eef2ff;
+  --tw-prose-counters: #8b9cc4;
+  --tw-prose-bullets: #6366f1;
+  --tw-prose-hr: rgba(255, 255, 255, 0.12);
+  --tw-prose-quotes: #b6c2e2;
+  --tw-prose-quote-borders: #6366f1;
+  --tw-prose-captions: #8b9cc4;
+  --tw-prose-code: #fbbf24;
+  --tw-prose-pre-code: #d3dcf0;
+  --tw-prose-pre-bg: #0a0f1c;
+  --tw-prose-th-borders: rgba(255, 255, 255, 0.16);
+  --tw-prose-td-borders: rgba(255, 255, 255, 0.08);
+}
+.prose a {
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.prose ::selection {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+/* 页内目录（TOC）：滚动高亮当前小节 */
+.toc-link {
+  display: block;
+  border-left: 2px solid transparent;
+  padding: 0.3rem 0.5rem 0.3rem 0.85rem;
+  color: var(--color-star-400);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.toc-link:hover {
+  color: var(--color-star-100);
+}
+.toc-link.active {
+  border-left-color: var(--c);
+  color: #fff;
+}
+.toc-link.depth-3 {
+  padding-left: 1.6rem;
+}
+
+/* 锚点跳转时避开吸顶导航 */
+.prose :is(h2, h3, h4)[id] {
+  scroll-margin-top: 5.5rem;
+}
+
+/* 相关工作路线：论文条目（默认折叠，点击展开） */
+.paper-entry {
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.9rem;
+  background: rgba(17, 26, 46, 0.7);
+  transition: border-color 0.15s ease;
+}
+.paper-entry:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.paper-entry summary {
+  display: grid;
+  grid-template-columns: 0.85rem minmax(0, 1fr);
+  column-gap: 0.5rem;
+  row-gap: 0.2rem;
+  padding: 0.8rem 1.05rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.paper-entry .entry-line {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.65rem;
+  min-width: 0;
+}
+.paper-entry .entry-tldr {
+  grid-column: 2;
+  color: var(--color-star-400);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+.paper-entry .entry-nocode {
+  color: var(--color-star-600);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.paper-entry summary::-webkit-details-marker {
+  display: none;
+}
+.paper-entry summary::before {
+  content: "▸";
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  font-size: 0.8rem;
+  color: var(--color-star-500);
+  transition: transform 0.18s ease;
+}
+.paper-entry[open] summary::before {
+  transform: rotate(90deg);
+}
+.paper-entry[open] summary {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.paper-entry .entry-meta {
+  color: var(--color-star-500);
+  font-size: 0.78rem;
+}
+.paper-entry summary a {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.paper-entry > :not(summary) {
+  padding-left: 1.05rem;
+  padding-right: 1.05rem;
+}
+.paper-entry > :last-child {
+  padding-bottom: 0.85rem;
+}
+.paper-entry ul {
+  margin: 0.35rem 0;
+}

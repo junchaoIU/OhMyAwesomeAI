@@ -1,0 +1,41 @@
+---
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import { u } from '../lib/utils';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = '一张持续演进的 AI 研究世界地图：领域综述、论文精读、研究问题与演进时间线。',
+} = Astro.props;
+
+const siteName = 'Oh My Awesome AI';
+const pageTitle = title ? `${title} · ${siteName}` : `${siteName} · AI 世界地图`;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href={u('favicon.svg')} />
+  </head>
+  <body class="starfield min-h-screen">
+    <Header />
+    <main class="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-6">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

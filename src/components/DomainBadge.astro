@@ -1,0 +1,21 @@
+---
+import { u } from '../lib/utils';
+
+interface Props {
+  slug: string;
+  name: string;
+  color: string;
+  size?: 'sm' | 'md';
+}
+
+const { slug, name, color, size = 'sm' } = Astro.props;
+---
+
+<a
+  href={u(`map/${slug}`)}
+  class="inline-flex items-center gap-1.5 text-star-300 transition hover:text-white"
+  style={`--c:${color}`}
+>
+  <span class="domain-dot"></span>
+  <span class:list={[size === 'sm' ? 'text-xs' : 'text-sm font-medium', 'leading-none']}>{name}</span>
+</a>

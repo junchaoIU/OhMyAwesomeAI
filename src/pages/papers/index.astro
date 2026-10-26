@@ -1,0 +1,79 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../components/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PaperCard from '../../components/PaperCard.astro';
+import { ROOT_COLORS, ROOT_DOMAINS, makeParentMap, rootOf } from '../../lib/domains';
+import { u } from '../../lib/utils';
+
+const papers = await getCollection('papers');
+const domains = await getCollection('domains');
+const parentMap = makeParentMap(domains);
+
+const colorOf = (slug: string) => ROOT_COLORS[rootOf(slug, parentMap)] ?? '#94a3b8';
+const nameOf = (slug: string) => domains.find((d) => d.id === slug)?.data.name ?? slug;
+
+const sorted = [...papers].sort((a, b) => b.data.year - a.data.year);
+
+const counts = new Map<string, number>();
+for (const p of papers) {
+  const root = rootOf(p.data.domain, parentMap);
+  counts.set(root, (counts.get(root) ?? 0) + 1);
+}
+---
+
+<BaseLayout
+  title="论文精读"
+  description="值得精读的 AI 论文：带评分与批判性分析的阅读笔记，拒绝摘要搬运。"
+>
+  <PageHeader
+    eyebrow="PAPERS"
+    title="论文精读"
+    description="每一篇都是完整读过的：一句话定位、核心要点、批判性评价。星级代表「值得投入精读」的程度。"
+    accent="#38bdf8"
+  />
+
+  <!-- 根领域过滤 -->
+  <div class="mb-8 flex flex-wrap gap-2" role="group" aria-label="按根领域过滤">
+    <button class="filter-chip" data-filter="all" aria-pressed="true">
+      全部（{papers.length}）
+    </button>
+    {
+      ROOT_DOMAINS.filter((d) => counts.get(d.slug)).map((d) => (
+        <button class="filter-chip" data-filter={d.slug} aria-pressed="false">
+          <span class="domain-dot" style={`--c:${d.color};width:0.4rem;height:0.4rem`} />
+          {d.name}（{counts.get(d.slug)}）
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    {
+      sorted.map((p) => (
+        <div data-root={rootOf(p.data.domain, parentMap)}>
+          <PaperCard entry={p} domainName={nameOf(p.data.domain)} color={colorOf(p.data.domain)} />
+        </div>
+      ))
+    }
+  </div>
+
+  <noscript>
+    <p class="mt-8 text-xs text-star-500">启用 JavaScript 可按领域过滤论文列表。</p>
+  </noscript>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+  const cards = document.querySelectorAll<HTMLElement>('[data-root]');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter ?? 'all';
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      cards.forEach((el) => {
+        el.hidden = filter !== 'all' && el.dataset.root !== filter;
+      });
+    });
+  });
+</script>

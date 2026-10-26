@@ -1,0 +1,35 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import DomainBadge from './DomainBadge.astro';
+import Rating from './Rating.astro';
+import { u } from '../lib/utils';
+
+interface Props {
+  entry: CollectionEntry<'papers'>;
+  domainName: string;
+  color: string;
+}
+
+const { entry, domainName, color } = Astro.props;
+const { title, authors, venue, year, rating, oneLiner, domain } = entry.data;
+---
+
+<!-- 卡片本体不能是 <a>：内部 DomainBadge 也会渲染 <a>，嵌套锚点是非法 HTML，
+     浏览器解析时会拆开卡片并把徽章移出、留下空的 panel 克隆。
+     改用 stretched-link：透明点击层铺满卡片，徽章链接置于其上。 -->
+<article class="panel group relative block p-5 transition hover:border-white/25 hover:bg-void-800/70">
+  <a href={u(`papers/${entry.id}`)} class="absolute inset-0 rounded-2xl" aria-label={`${title}：阅读精读`}></a>
+  <div class="flex items-start justify-between gap-3">
+    <h3 class="text-base font-semibold leading-snug text-star-100 transition group-hover:text-white">
+      {title}
+    </h3>
+    <Rating value={rating} />
+  </div>
+  <p class="mt-1.5 text-xs text-star-500">
+    {authors} · {venue ? `${venue} ` : ''}{year}
+  </p>
+  <p class="mt-3 text-sm leading-relaxed text-star-300">{oneLiner}</p>
+  <div class="relative z-10 mt-4">
+    <DomainBadge slug={domain} name={domainName} color={color} />
+  </div>
+</article>

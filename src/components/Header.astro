@@ -1,0 +1,53 @@
+---
+import { u } from '../lib/utils';
+
+const nav = [
+  { href: u('/map'), label: '世界地图' },
+  { href: u('/timeline'), label: '时间线' },
+  { href: u('/papers'), label: '论文精读' },
+  { href: u('/questions'), label: '研究问题' },
+  { href: u('/blog'), label: '综述' },
+  { href: u('/about'), label: '关于' },
+];
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  path === href || path === `${href}/` || (href !== u('/') && path.startsWith(`${href}/`));
+---
+
+<header class="sticky top-0 z-50 border-b border-white/10 bg-void-950/80 backdrop-blur-md">
+  <div class="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
+    <a href={u('/')} class="flex shrink-0 items-center gap-2.5" aria-label="回到首页">
+      <svg viewBox="0 0 64 64" class="h-8 w-8" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="#0a0f1c" stroke="rgba(255,255,255,0.12)"></rect>
+        <circle cx="32" cy="32" r="17" fill="none" stroke="#818cf8" stroke-width="2.5"></circle>
+        <ellipse cx="32" cy="32" rx="8" ry="17" fill="none" stroke="#818cf8" stroke-width="1.4" opacity="0.55"></ellipse>
+        <path d="M15 32h34" stroke="#818cf8" stroke-width="1.4" opacity="0.55"></path>
+        <circle cx="45" cy="21" r="3.2" fill="#fb7185"></circle>
+        <circle cx="20" cy="44" r="2.4" fill="#34d399"></circle>
+        <circle cx="38" cy="46" r="1.8" fill="#facc15"></circle>
+      </svg>
+      <span class="flex flex-col leading-tight">
+        <span class="font-serif text-base font-bold tracking-wide text-white">Oh My Awesome AI</span>
+        <span class="text-[10px] tracking-[0.3em] text-star-500">AI 世界地图</span>
+      </span>
+    </a>
+    <nav class="ml-auto flex items-center gap-1 overflow-x-auto text-sm [scrollbar-width:none]">
+      {
+        nav.map((item) => (
+          <a
+            href={item.href}
+            class:list={[
+              'whitespace-nowrap rounded-lg px-3 py-1.5 transition',
+              isActive(item.href)
+                ? 'bg-white/10 text-white'
+                : 'text-star-300 hover:bg-white/5 hover:text-white',
+            ]}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>

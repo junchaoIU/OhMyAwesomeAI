@@ -1,0 +1,135 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../components/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { ROOT_COLORS, ROOT_DOMAINS, makeParentMap, rootOf } from '../lib/domains';
+import { IMPORTANCE_META, formatMonthDay, u } from '../lib/utils';
+
+const timeline = await getCollection('timeline');
+const domains = await getCollection('domains');
+const parentMap = makeParentMap(domains);
+
+const colorOf = (slug: string) => ROOT_COLORS[rootOf(slug, parentMap)] ?? '#94a3b8';
+const nameOf = (slug: string) => domains.find((d) => d.id === slug)?.data.name ?? slug;
+
+const sorted = [...timeline].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+/** 按年份分组（倒序） */
+const byYear = new Map<number, typeof sorted>();
+for (const e of sorted) {
+  const y = e.data.date.getFullYear();
+  const arr = byYear.get(y) ?? [];
+  arr.push(e);
+  byYear.set(y, arr);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+---
+
+<BaseLayout
+  title="演进时间线"
+  description="从图灵测试到推理模型：人工智能七十余年的关键事件，按时间倒序、按领域着色。"
+>
+  <PageHeader
+    eyebrow="TIMELINE"
+    title="演进时间线"
+    description="领域的历史由事件构成。点击上方标签可按根领域过滤；圆点越大，事件越关键。"
+    accent="#e879f9"
+  />
+
+  <!-- 根领域过滤 -->
+  <div class="mb-10 flex flex-wrap gap-2" id="filters" role="group" aria-label="按根领域过滤">
+    <button class="filter-chip" data-filter="all" aria-pressed="true">全部</button>
+    {
+      ROOT_DOMAINS.map((d) => (
+        <button class="filter-chip" data-filter={d.slug} aria-pressed="false">
+          <span class="domain-dot" style={`--c:${d.color};width:0.4rem;height:0.4rem`} />
+          {d.name}
+        </button>
+      ))
+    }
+  </div>
+
+  <!-- 图例 -->
+  <div class="mb-8 flex flex-wrap items-center gap-4 text-xs text-star-500">
+    {
+      Object.entries(IMPORTANCE_META).map(([key, meta]) => (
+        <span class="inline-flex items-center gap-1.5">
+          <span class:list={['inline-block rounded-full', meta.dotCls, 'bg-white/60']} />
+          {meta.label}
+        </span>
+      ))
+    }
+  </div>
+
+  <div class="max-w-3xl space-y-12">
+    {
+      years.map((year) => (
+        <section data-year-group>
+          <div class="sticky top-16 z-10 -ml-2 mb-4 flex w-fit items-center gap-3 rounded-xl bg-void-950/85 px-3 py-1.5 backdrop-blur">
+            <span class="font-serif text-2xl font-bold text-white">{year}</span>
+            <span class="text-xs text-star-500">{byYear.get(year)!.length} 个事件</span>
+          </div>
+          <ol class="relative ml-3 space-y-3 border-l border-white/10 pl-6">
+            {byYear.get(year)!.map((e) => {
+              const color = colorOf(e.data.domain);
+              const imp = IMPORTANCE_META[e.data.importance];
+              return (
+                <li data-root={rootOf(e.data.domain, parentMap)} class="group relative">
+                  <span
+                    class:list={['domain-dot absolute -left-[31px] top-2 rounded-full ring-white/10', imp.dotCls]}
+                    style={`--c:${color}`}
+                  />
+                  <div class="panel p-4 transition group-hover:border-white/25 group-hover:bg-void-800/70">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h3 class="text-sm font-semibold text-star-100">{e.data.title}</h3>
+                      <span class="text-xs text-star-500">{formatMonthDay(e.data.date)}</span>
+                      {e.data.importance === 'key' && (
+                        <span class="chip text-amber-300 ring-amber-400/30 bg-amber-500/10">关键里程碑</span>
+                      )}
+                    </div>
+                    <p class="mt-1.5 text-sm leading-relaxed text-star-300">{e.data.summary}</p>
+                    <div class="mt-2.5 flex flex-wrap items-center gap-3">
+                      <a
+                        href={u(`map/${e.data.domain}`)}
+                        class="inline-flex items-center gap-1.5 text-xs text-star-400 transition hover:text-star-100"
+                        style={`--c:${color}`}
+                      >
+                        <span class="domain-dot" style="width:0.4rem;height:0.4rem" />
+                        {nameOf(e.data.domain)}
+                      </a>
+                      {e.data.paperRef && <span class="text-xs text-star-600">{e.data.paperRef}</span>}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+
+  <noscript>
+    <p class="mt-8 text-xs text-star-500">启用 JavaScript 可按领域过滤时间线。</p>
+  </noscript>
+</BaseLayout>
+
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-filter]');
+  const events = document.querySelectorAll<HTMLElement>('[data-root]');
+  const yearGroups = document.querySelectorAll<HTMLElement>('[data-year-group]');
+
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter ?? 'all';
+      buttons.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      events.forEach((el) => {
+        el.hidden = filter !== 'all' && el.dataset.root !== filter;
+      });
+      yearGroups.forEach((g) => {
+        const visible = g.querySelectorAll<HTMLElement>('[data-root]:not([hidden])').length;
+        g.hidden = visible === 0;
+      });
+    });
+  });
+</script>

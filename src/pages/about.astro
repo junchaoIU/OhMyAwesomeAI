@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../components/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { ROOT_DOMAINS } from '../lib/domains';
+import { u } from '../lib/utils';
+---
+
+<BaseLayout title="关于" description="Oh My Awesome AI 的建站初衷、内容模型与写作规范。">
+  <PageHeader eyebrow="ABOUT" title="关于本站" accent="#34d399" />
+
+  <div class="prose prose-invert mx-auto max-w-3xl">
+    <h2>为什么建这个站</h2>
+    <p>
+      AI 研究的产出速度已经超出了任何个人「顺着时间线读论文」的承受能力。与其被动地被推送裹挟，不如主动铺一张地图：
+      <strong>以领域为经、时间为纬</strong>，把「这个领域走到哪了、哪些工作真正重要、哪些问题还开着」结构化地沉淀下来。
+      本站是我个人研究笔记的公开层——所有内容以 Markdown 管理，构建为纯静态站点。
+    </p>
+    <p>
+      地图的骨架是<strong>十大根领域</strong>，每种颜色代表一个根领域，贯穿地图、时间线与论文精读：
+    </p>
+    <ul>
+      {
+        ROOT_DOMAINS.map((d) => (
+          <li>
+            <span class="inline-flex items-center gap-1.5" style={`--c:${d.color}`}>
+              <span class="domain-dot" style="width:0.45rem;height:0.45rem" />
+            </span>
+            <a href={u(`map/${d.slug}`)}><strong>{d.name}</strong>（{d.en}）</a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <h2>内容模型</h2>
+    <p>站内一切内容分六类，全部存放于 <code>src/content/</code> 下的 Markdown 文件：</p>
+    <table>
+      <thead>
+        <tr><th>集合</th><th>内容</th><th>入口</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>domains</code></td><td>领域地图节点（树结构）</td><td><a href={u('map')}>世界地图</a></td></tr>
+        <tr><td><code>timeline</code></td><td>领域演进事件</td><td><a href={u('timeline')}>时间线</a></td></tr>
+        <tr><td><code>papers</code></td><td>论文精读笔记</td><td><a href={u('papers')}>论文精读</a></td></tr>
+        <tr><td><code>questions</code></td><td>研究问题追踪</td><td><a href={u('questions')}>研究问题</a></td></tr>
+        <tr><td><code>posts</code></td><td>综述长文</td><td><a href={u('blog')}>综述</a></td></tr>
+        <tr><td><code>notes</code></td><td>日志速记</td><td><a href={u('notes')}>速记</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2>写作规范（自我约束）</h2>
+    <ul>
+      <li><strong>论文精读拒绝摘要搬运</strong>：每篇按固定七段展开——背景、动机、方法、实验设置、结果、有趣的洞见、批判性评价（最弱的一环 + 依然重要的理由），另附「一句话定位」、要点与星级评价。</li>
+      <li><strong>领域节点必须回答三个问题</strong>：解决什么问题、当前主流方法是什么、还差什么。</li>
+      <li><strong>子领域页推荐「相关工作路线」形态</strong>：分两层——高亮路线（高影响力论文、范式确立之作与常用基线）按时间倒序、默认折叠，收起时即可见标题、第一单位、时间、发表 venue、论文链接、代码链接与一句话简介，点击展开分点拆解，有完整精读的直接互链；规模变大可加全景档案层（大量条目同样折叠、按时间倒序平铺不分类）。几百篇论文也只是一条更长的折叠清单，页面高度几乎不随条目数增长。</li>
+      <li><strong>时间线只收关键事件</strong>：能改变后续研究议程的事件才入选，宁缺毋滥。</li>
+      <li><strong>研究问题要写清「为什么重要」</strong>：并持续更新状态（悬而未决 / 稳步推进 / 存在争议 / 部分解决）。</li>
+      <li><strong>速记允许出错</strong>：它是一手判断的留痕，日后回看修订，不追求发表级严谨。</li>
+    </ul>
+
+    <h2>技术栈</h2>
+    <p>
+      站点由 <a href="https://astro.build" target="_blank" rel="noopener noreferrer">Astro</a> 构建（内容集合 + 静态生成），
+      样式使用 Tailwind CSS v4，部署在 GitHub Pages。除时间线/论文的领域过滤外几乎零客户端 JavaScript。
+    </p>
+
+    <h2>勘误</h2>
+    <p>
+      这是个人笔记，错误在所难免。如果你发现事实性错误或重要遗漏，欢迎指出——地图的价值在于持续修订。
+    </p>
+  </div>
+</BaseLayout>

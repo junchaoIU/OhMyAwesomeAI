@@ -1,0 +1,22 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../components/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PostCard from '../../components/PostCard.astro';
+
+const posts = await getCollection('posts');
+const sorted = [...posts].sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout title="综述" description="系统性的领域综述长文：梳理脉络、对比方法、标注开放问题。">
+  <PageHeader
+    eyebrow="LONG-FORM"
+    title="领域综述"
+    description="比论文精读更长、比教科书更快的领域梳理。每篇综述都会挂接到世界地图的对应领域。"
+    accent="#a5b4fc"
+  />
+
+  <div class="grid gap-4 md:grid-cols-2">
+    {sorted.map((p) => <PostCard entry={p} />)}
+  </div>
+</BaseLayout>

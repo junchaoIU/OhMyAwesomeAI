@@ -1,0 +1,208 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../components/BaseLayout.astro';
+import QuestionCard from '../components/QuestionCard.astro';
+import { ROOT_DOMAINS, makeParentMap, rootOf } from '../lib/domains';
+import { FEED_KIND_META, formatDate, u } from '../lib/utils';
+
+const domains = await getCollection('domains');
+const papers = await getCollection('papers');
+const questions = await getCollection('questions');
+const posts = await getCollection('posts');
+const notes = await getCollection('notes');
+const timeline = await getCollection('timeline');
+
+const parentMap = makeParentMap(domains);
+const nameOf = (slug: string) => domains.find((d) => d.id === slug)?.data.name ?? slug;
+
+/** 每个根领域的聚合统计 */
+const rootStats = ROOT_DOMAINS.map((meta) => {
+  const subtree = new Set(
+    domains.filter((d) => rootOf(d.id, parentMap) === meta.slug).map((d) => d.id),
+  );
+  const entry = domains.find((d) => d.id === meta.slug);
+  return {
+    ...meta,
+    summary: entry?.data.summary ?? '',
+    status: entry?.data.status ?? 'active',
+    subCount: subtree.size - 1,
+    paperCount: papers.filter((p) => subtree.has(p.data.domain)).length,
+    eventCount: timeline.filter((t) => subtree.has(t.data.domain)).length,
+    questionCount: questions.filter((q) => subtree.has(q.data.domain)).length,
+  };
+});
+
+const subCount = domains.length - rootStats.length;
+
+/** 最新内容流：综述 / 精读 / 速记 按时间混排 */
+const feed = [
+  ...posts.map((e) => ({
+    kind: 'post' as const,
+    date: e.data.date.valueOf(),
+    href: u(`blog/${e.id}`),
+    title: e.data.title,
+    desc: e.data.description,
+    domain: e.data.domain,
+  })),
+  ...papers.map((e) => ({
+    kind: 'paper' as const,
+    date: new Date(e.data.year, 6, 1).valueOf(),
+    href: u(`papers/${e.id}`),
+    title: e.data.title,
+    desc: e.data.oneLiner,
+    domain: e.data.domain,
+  })),
+  ...notes.map((e) => ({
+    kind: 'note' as const,
+    date: e.data.date.valueOf(),
+    href: `${u('notes')}#${e.id}`,
+    title: e.data.title ?? `${formatDate(e.data.date)} 的速记`,
+    desc: e.body?.trim().replace(/\s+/g, ' ').slice(0, 120) ?? '',
+    domain: undefined,
+  })),
+]
+  .sort((a, b) => b.date - a.date)
+  .slice(0, 9);
+
+const openQuestions = [...questions].sort((a, b) => a.id.localeCompare(b.id)).slice(0, 3);
+---
+
+<BaseLayout>
+  <!-- Hero -->
+  <section class="relative py-16 sm:py-24">
+    <div class="max-w-4xl">
+      <p class="mb-4 text-xs font-semibold tracking-[0.35em] text-indigo-300/80">
+        A LIVING MAP OF AI RESEARCH
+      </p>
+      <h1 class="font-serif text-4xl font-bold leading-tight tracking-tight text-white sm:text-6xl">
+        铺开一张
+        <span class="bg-gradient-to-r from-indigo-300 via-sky-300 to-fuchsia-300 bg-clip-text text-transparent">
+          AI 世界地图
+        </span>
+      </h1>
+      <p class="mt-6 max-w-2xl text-base leading-relaxed text-star-300 sm:text-lg">
+        以领域为经、时间为纬，系统梳理人工智能研究的版图：每个领域走到哪了、哪些论文真正重要、哪些问题仍然悬而未决。
+        这是一份持续修订的个人研究笔记，欢迎同行者按图索骥。
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a
+          href={u('map')}
+          class="rounded-xl bg-indigo-500/90 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-400"
+        >
+          进入世界地图 →
+        </a>
+        <a
+          href={u('timeline')}
+          class="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-star-200 transition hover:border-white/30 hover:text-white"
+        >
+          沿时间线漫游
+        </a>
+      </div>
+
+      <!-- 站点统计 -->
+      <dl class="mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-5">
+        {
+          [
+            { label: '根领域', value: ROOT_DOMAINS.length },
+            { label: '子领域', value: subCount },
+            { label: '论文精读', value: papers.length },
+            { label: '时间线事件', value: timeline.length },
+            { label: '研究问题', value: questions.length },
+          ].map((s) => (
+            <div class="bg-void-900/80 px-4 py-4 text-center">
+              <dt class="text-[11px] tracking-wider text-star-500">{s.label}</dt>
+              <dd class="mt-1 font-serif text-2xl font-bold text-white">{s.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <!-- 十大根领域 -->
+  <section class="py-8">
+    <div class="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-2xl font-bold text-white">十大领域</h2>
+        <p class="mt-1 text-sm text-star-400">每种颜色是一个根领域，贯穿地图、时间线与论文精读。</p>
+      </div>
+      <a href={u('map')} class="shrink-0 text-sm text-star-300 transition hover:text-white">查看完整地图 →</a>
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      {
+        rootStats.map((d) => (
+          <a href={u(`map/${d.slug}`)} class="domain-card group rounded-2xl p-5 transition" style={`--c:${d.color}`}>
+            <div class="flex items-center gap-2">
+              <span class="domain-dot" />
+              <span class="domain-glow-text font-serif text-lg font-bold">{d.name}</span>
+            </div>
+            <p class="mt-1 text-[10px] uppercase tracking-[0.18em] text-star-500">{d.en}</p>
+            <p class="mt-3 line-clamp-3 min-h-[3.6rem] text-[13px] leading-relaxed text-star-300">{d.summary}</p>
+            <p class="mt-3 text-[11px] text-star-500">
+              {d.subCount} 子领域 · {d.paperCount} 精读 · {d.eventCount} 事件
+            </p>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- 最新内容流 -->
+  <section class="py-8">
+    <div class="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-2xl font-bold text-white">最新笔记</h2>
+        <p class="mt-1 text-sm text-star-400">综述、论文精读与日志速记，按时间倒序。</p>
+      </div>
+    </div>
+    <div class="panel divide-y divide-white/5">
+      {
+        feed.map((item) => {
+          const meta = FEED_KIND_META[item.kind];
+          const domainName = item.domain ? nameOf(item.domain) : undefined;
+          const color = item.domain ? (ROOT_DOMAINS.find((r) => r.slug === rootOf(item.domain, parentMap))?.color ?? '#94a3b8') : undefined;
+          return (
+            <a href={item.href} class="group flex items-start gap-4 px-5 py-4 transition hover:bg-white/[0.03]">
+              <span class:list={['chip mt-0.5 shrink-0', meta.cls]}>{meta.label}</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium text-star-100 transition group-hover:text-white">{item.title}</p>
+                <p class="mt-0.5 line-clamp-1 text-xs leading-relaxed text-star-400">{item.desc}</p>
+              </div>
+              <div class="flex shrink-0 flex-col items-end gap-1">
+                {domainName && color ? (
+                  <span class="inline-flex items-center gap-1.5 text-xs text-star-400" style={`--c:${color}`}>
+                    <span class="domain-dot" style="width:0.4rem;height:0.4rem" />
+                    {domainName}
+                  </span>
+                ) : null}
+                <time class="text-[11px] text-star-600">{formatDate(new Date(item.date))}</time>
+              </div>
+            </a>
+          );
+        })
+      }
+    </div>
+  </section>
+
+  <!-- 值得思考的问题 -->
+  <section class="py-8">
+    <div class="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <h2 class="font-serif text-2xl font-bold text-white">悬而未决的问题</h2>
+        <p class="mt-1 text-sm text-star-400">驱动当前研究议程的开放问题。</p>
+      </div>
+      <a href={u('questions')} class="shrink-0 text-sm text-star-300 transition hover:text-white">全部问题 →</a>
+    </div>
+    <div class="grid gap-4 md:grid-cols-3">
+      {
+        openQuestions.map((q) => (
+          <QuestionCard
+            entry={q}
+            domainName={nameOf(q.data.domain)}
+            color={ROOT_DOMAINS.find((r) => r.slug === rootOf(q.data.domain, parentMap))?.color ?? '#94a3b8'}
+          />
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>
